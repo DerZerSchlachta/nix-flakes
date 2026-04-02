@@ -1,60 +1,48 @@
-# https://github.com/omriharel/deej
-# https://github.com/omriharel/deej/blob/master/assets/community-builds/snackya.jpg
-# https://github.com/omriharel/deej/blob/master/assets/community-builds/bgrier.jpg
 {
   lib,
   buildGoModule,
   fetchFromGitHub,
-  pkg-config,
-  stdenv,
-  darwin,
-  gtk3,
-  webkitgtk_4_0,
-  libappindicator-gtk3,
 }:
+# nix-module taken from: "https://github.com/stefan-matic/nixos-config/blob/main/pkgs/deej-new/default.nix"
+
 buildGoModule rec {
-  pname = "deej";
-  version = "0.9.10";
+  pname = "deej-new";
+  version = "1.0.0"; # Using a placeholder version since there's no explicit version
 
   src = fetchFromGitHub {
-    owner = "omriharel";
-    repo = "deej";
-    rev = "v${version}";
-    hash = "sha256-T6S3FQ9vxl4R3D+uiJ83z1ueK+3pfASEjpRI+HjIV0M=";
+    owner = "TheScabbage";
+    repo = "deej-linux";
+    rev = "master";
+    sha256 = "sha256-FDKm8zQ25To6KmKO7cX9MJfCTnvzoqhMXXaXBT4xHlc=";
   };
 
-  vendorHash = "sha256-1gjFPD7YV2MTp+kyC+hsj+NThmYG3hlt6AlOzXmEKyA=";
+  vendorHash = "sha256-9g8AugKTVkT4cucMzcBS/vJk7lukzvS6jKyKMqEe2io=";
 
-  nativeBuildInputs = [
-    pkg-config
-  ];
+  # The main package is actually in pkg/deej/cmd directory
+  subPackages = [ "pkg/deej/cmd" ];
 
-  buildInputs =
-    lib.optionals stdenv.isDarwin [
-      darwin.apple_sdk.frameworks.Cocoa
-      darwin.apple_sdk.frameworks.WebKit
-    ]
-    ++ lib.optionals stdenv.isLinux [
-      libappindicator-gtk3
-      gtk3
-      webkitgtk_4_0
-    ];
-
+  # Add ldflags to match the build script
   ldflags = [
     "-s"
     "-w"
+    "-X main.versionTag=${version}"
+    "-X main.buildType=release"
   ];
 
+  # Rename the binary to have a more standard name
   postInstall = ''
-    mkdir -p $out/bin
-    mv $out/bin/cmd $out/bin/deej
+    mv $out/bin/cmd $out/bin/deej-linux
+
+    # Create directories for configuration
+    mkdir -p $out/share/deej
+    cp ${src}/config.yaml $out/share/deej/
   '';
 
   meta = with lib; {
-    description = "Set app volumes with real sliders! deej is an Arduino & Go project to let you build your own hardware mixer for Windows and Linux";
-    homepage = "https://github.com/omriharel/deej";
+    description = "Set app volumes with real sliders - a hardware volume mixer for Linux";
+    homepage = "https://github.com/TheScabbage/deej-linux";
     license = licenses.mit;
-    maintainers = with maintainers; [ ];
-    mainProgram = "deej";
+    maintainers = [ ];
+    platforms = platforms.linux;
   };
 }
